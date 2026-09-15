@@ -1,5 +1,5 @@
 fastapi
-uvicorn
-google-generativeai
-python-dotenv
+uvicorn[standard]
 yt-dlp
+requests
+pydantic
