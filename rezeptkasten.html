@@ -1,0 +1,784 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>Der Rezeptkasten</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,700;9..144,900&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --ink: #2b2622;
+    --ink-soft: #5a5148;
+    --paper: #e9dcc3;
+    --card: #fffcf4;
+    --tomato: #b8382a;
+    --herb: #52713d;
+    --butter: #d99a1f;
+    --rule: #d3c0a0;
+    --brass: #a9822f;
+  }
+
+  * { box-sizing: border-box; }
+  html { -webkit-text-size-adjust: 100%; }
+
+  body {
+    margin: 0;
+    font-family: 'Inter', sans-serif;
+    color: var(--ink);
+    background:
+      radial-gradient(ellipse at 15% -10%, rgba(255,255,255,0.35), transparent 45%),
+      repeating-linear-gradient(135deg, rgba(0,0,0,0.015) 0px, rgba(0,0,0,0.015) 2px, transparent 2px, transparent 4px),
+      var(--paper);
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  button, a, input, textarea, select { touch-action: manipulation; }
+  *:focus-visible { outline: 2px solid var(--tomato); outline-offset: 2px; }
+
+  .wrap { max-width: 780px; margin: 0 auto; padding: 56px 24px 100px; }
+
+  .eyebrow {
+    font-family: 'JetBrains Mono', monospace; font-size: 12px; letter-spacing: .12em;
+    text-transform: uppercase; color: var(--tomato); margin: 0 0 10px;
+  }
+  .title {
+    font-family: 'Fraunces', serif; font-weight: 900; font-size: clamp(2rem, 5vw, 2.9rem);
+    margin: 0; line-height: 1.05; letter-spacing: -0.01em;
+  }
+
+  /* ---------- Header + search ---------- */
+  .home-header { display: flex; align-items: flex-end; justify-content: space-between; gap: 20px; margin-bottom: 26px; flex-wrap: wrap; }
+  .header-actions { display: flex; gap: 10px; align-items: center; }
+
+  .btn {
+    font-family: 'Fraunces', serif; font-weight: 700; font-size: 16px;
+    border: none; border-radius: 999px; padding: 14px 28px; cursor: pointer;
+    display: inline-flex; align-items: center; gap: 8px; justify-content: center;
+    background: var(--tomato); color: #fff8ee;
+    box-shadow: 0 8px 18px -8px rgba(184,56,42,0.55);
+    transition: transform .15s ease, box-shadow .15s ease;
+    text-decoration: none;
+  }
+  .btn:hover { transform: translateY(-2px); box-shadow: 0 12px 22px -8px rgba(184,56,42,0.6); }
+  .btn-small { padding: 10px 20px; font-size: 14px; min-height: 44px; }
+  .btn-ghost {
+    background: transparent; color: var(--ink-soft); box-shadow: none;
+    border: 1.5px solid var(--rule);
+  }
+  .btn-ghost:hover { transform: none; box-shadow: none; border-color: var(--ink-soft); }
+  .btn-ai {
+    background: linear-gradient(180deg, #e8c565, var(--butter));
+    color: #3a2c0c; box-shadow: 0 8px 16px -8px rgba(217,154,31,0.55);
+    width: 100%;
+  }
+  .btn-ai:hover { box-shadow: 0 10px 20px -8px rgba(217,154,31,0.6); }
+  .btn-ai:disabled { opacity: .7; cursor: wait; transform: none; box-shadow: none; }
+
+  .icon-btn-outline {
+    width: 44px; height: 44px; border-radius: 999px; border: 1.5px solid var(--rule);
+    background: transparent; color: var(--ink-soft); cursor: pointer; flex-shrink: 0;
+    display: flex; align-items: center; justify-content: center; font-size: 17px;
+    transition: border-color .15s ease, color .15s ease;
+  }
+  .icon-btn-outline:hover { border-color: var(--ink-soft); color: var(--ink); }
+
+  .catalog-search {
+    display: flex; align-items: center; gap: 10px;
+    background: linear-gradient(180deg, #f4ead4, #e9dcc3);
+    border: 1px solid var(--brass); border-radius: 8px;
+    padding: 10px 16px; margin-bottom: 20px;
+    box-shadow: inset 0 1px 3px rgba(0,0,0,0.12), 0 1px 0 rgba(255,255,255,0.4);
+  }
+  .catalog-search svg { flex-shrink: 0; opacity: .55; }
+  .catalog-search input {
+    border: none; background: transparent; outline: none; flex: 1;
+    font-family: 'JetBrains Mono', monospace; font-size: 16px; color: var(--ink);
+    letter-spacing: .02em;
+  }
+  .catalog-search input::placeholder { color: #8a7f6f; }
+
+  /* ---------- Toolbar: sort + tag filter ---------- */
+  .toolbar { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; margin-bottom: 30px; }
+  .sort-select {
+    font-family: 'JetBrains Mono', monospace; font-size: 13px; color: var(--ink-soft);
+    background: var(--card); border: 1px solid var(--rule); border-radius: 6px;
+    padding: 9px 12px; cursor: pointer; outline: none; flex-shrink: 0;
+  }
+  .sort-select:focus { border-color: var(--tomato); }
+  .tag-filter-row { display: flex; gap: 8px; flex-wrap: wrap; }
+  .tag-chip {
+    font-family: 'JetBrains Mono', monospace; font-size: 12px; letter-spacing: .02em;
+    padding: 6px 13px; border-radius: 999px; border: 1px solid var(--rule);
+    background: var(--card); color: var(--ink-soft); cursor: pointer;
+    transition: all .15s ease;
+  }
+  .tag-chip:hover { border-color: var(--herb); color: var(--herb); }
+  .tag-chip.active { background: var(--herb); border-color: var(--herb); color: #fff8ee; }
+  .tag-chip.static { cursor: default; padding: 4px 10px; font-size: 11px; background: rgba(82,113,61,0.1); border-color: transparent; color: var(--herb); }
+  .tag-chip.static:hover { border-color: transparent; color: var(--herb); }
+  .tag-row { display: flex; gap: 6px; flex-wrap: wrap; margin: 2px 0 12px; }
+  .tag-row.small { margin: 0 0 10px; }
+
+  .platform-label {
+    font-family: 'JetBrains Mono', monospace; font-size: 11px; letter-spacing: .04em;
+    color: var(--brass); margin-bottom: 2px; display: block;
+  }
+
+  /* ---------- Cards ---------- */
+  .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: 26px 22px; }
+  .card {
+    position: relative;
+    background: var(--card);
+    border-radius: 3px;
+    padding: 22px 20px 18px 30px;
+    box-shadow: 0 10px 22px -12px rgba(43,38,34,0.4), 0 1px 0 rgba(0,0,0,0.04);
+    transition: transform .2s ease, box-shadow .2s ease;
+    animation: cardIn .45s ease both;
+  }
+  .card:hover { transform: rotate(0deg) translateY(-4px) !important; box-shadow: 0 16px 30px -12px rgba(43,38,34,0.45); }
+  .card:nth-child(6n+1) { transform: rotate(-1.1deg); }
+  .card:nth-child(6n+2) { transform: rotate(0.9deg); }
+  .card:nth-child(6n+3) { transform: rotate(-0.5deg); }
+  .card:nth-child(6n+4) { transform: rotate(1.2deg); }
+  .card:nth-child(6n+5) { transform: rotate(-0.8deg); }
+  .card:nth-child(6n+6) { transform: rotate(0.6deg); }
+
+  .card::before { content: ""; position: absolute; top: 0; bottom: 0; left: 18px; width: 1px; background: var(--tomato); opacity: .3; }
+  .punch { position: absolute; left: 8px; top: 18px; width: 9px; height: 9px; border-radius: 50%;
+    background: var(--paper); box-shadow: inset 0 1px 2px rgba(0,0,0,0.25); }
+
+  .tab { position: absolute; top: -9px; left: 22px; width: 34px; height: 14px; border-radius: 3px 3px 0 0; font-size: 0; }
+
+  .card-name { font-family: 'Fraunces', serif; font-weight: 700; font-size: 18px; line-height: 1.25; margin: 4px 0 6px; word-break: break-word; }
+  .card-info { font-size: 13.5px; color: var(--ink-soft); line-height: 1.45; margin: 0 0 16px;
+    display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+  .card-info:empty { display: none; margin: 0 0 12px; }
+
+  .card-footer { display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap; }
+  .card-link {
+    font-family: 'JetBrains Mono', monospace; font-size: 12px; letter-spacing: .03em;
+    color: var(--herb); text-decoration: none; border-bottom: 1px dashed var(--herb);
+    padding: 4px 0; background: none; border-left: none; border-right: none; border-top: none; cursor: pointer;
+  }
+  .card-link:hover { color: var(--tomato); border-color: var(--tomato); }
+
+  .card-actions { display: flex; align-items: center; gap: 4px; }
+  .icon-btn {
+    background: none; border: none; cursor: pointer; color: #b9ac95; font-size: 14px;
+    line-height: 1; padding: 8px; min-width: 34px; min-height: 34px; border-radius: 6px;
+    font-family: 'JetBrains Mono', monospace;
+  }
+  .icon-btn:hover { color: var(--ink); background: rgba(43,38,34,0.06); }
+  .icon-btn.delete:hover { color: var(--tomato); }
+  .icon-btn.edit:hover { color: var(--herb); }
+
+  .empty-box { text-align: center; padding: 70px 20px; border: 1.5px dashed var(--rule); border-radius: 10px; grid-column: 1/-1; }
+  .empty-box p { font-family: 'JetBrains Mono', monospace; color: var(--ink-soft); font-size: 13px; margin-top: 14px; }
+
+  @keyframes cardIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; } }
+
+  /* ---------- Modal ---------- */
+  .modal-backdrop {
+    position: fixed; inset: 0; background: rgba(43,38,34,0.55);
+    display: none; align-items: center; justify-content: center; z-index: 100;
+    padding: 20px; backdrop-filter: blur(2px);
+  }
+  .modal-backdrop.open { display: flex; }
+
+  .modal-card {
+    position: relative;
+    background: var(--card);
+    border-radius: 6px;
+    padding: 34px 32px 28px 50px;
+    max-width: 480px; width: 100%;
+    max-height: 90vh; overflow-y: auto;
+    box-shadow: 0 30px 60px -20px rgba(0,0,0,0.5);
+    animation: modalIn .25s ease both;
+  }
+  .modal-card::before { content: ""; position: absolute; top: 0; bottom: 0; left: 38px; width: 1px; background: var(--tomato); opacity: .35; }
+  .modal-card .punch { top: 24px; }
+  .modal-card .punch.p2 { top: 56px; }
+
+  .modal-close {
+    position: absolute; top: 16px; right: 16px; background: none; border: none;
+    cursor: pointer; font-size: 17px; color: var(--ink-soft); width: 36px; height: 36px;
+    border-radius: 50%; line-height: 1;
+  }
+  .modal-close:hover { background: rgba(43,38,34,0.06); color: var(--ink); }
+
+  @keyframes modalIn { from { opacity: 0; transform: translateY(14px) scale(.98); } to { opacity: 1; transform: none; } }
+
+  .modal-title { font-family: 'Fraunces', serif; font-weight: 900; font-size: 1.6rem; margin: 0 0 24px; padding-right: 30px; }
+
+  .field-label {
+    display: block; font-family: 'JetBrains Mono', monospace; font-size: 11px;
+    text-transform: uppercase; letter-spacing: .08em; color: var(--ink-soft); margin-bottom: 8px;
+  }
+  .field { margin-bottom: 20px; }
+  .field input, .field textarea {
+    width: 100%; border: none; border-bottom: 1.5px solid var(--rule);
+    font-family: 'Inter', sans-serif; font-size: 16px; color: var(--ink);
+    padding: 4px 2px 8px; outline: none; background: transparent; resize: vertical;
+  }
+  .field textarea { min-height: 70px; line-height: 1.5;
+    background: repeating-linear-gradient(transparent, transparent 26px, var(--rule) 27px);
+    background-size: 100% 27px;
+  }
+  .field input::placeholder, .field textarea::placeholder { color: #b9ac95; }
+  .field input:focus, .field textarea:focus { border-bottom-color: var(--tomato); }
+  .field-hint { font-size: 12px; color: var(--ink-soft); margin: -14px 0 20px; line-height: 1.4; }
+
+  .modal-divider { border: none; border-top: 1px dashed var(--rule); margin: 6px 0 24px; }
+
+  .modal-actions { display: flex; gap: 12px; margin-top: 28px; flex-wrap: wrap; }
+  .modal-actions .btn { flex: 1; min-width: 140px; }
+
+  .status-msg { font-family: 'JetBrains Mono', monospace; font-size: 13px; margin: -6px 0 16px; min-height: 16px; line-height: 1.5; }
+  .status-msg.err { color: var(--tomato); }
+
+  .settings-hint { font-size: 13px; color: var(--ink-soft); line-height: 1.5; margin: -8px 0 24px; }
+  .danger-link {
+    display: block; margin-top: 24px; background: none; border: none; cursor: pointer;
+    font-family: 'JetBrains Mono', monospace; font-size: 12px; color: #a35148;
+    text-decoration: underline; text-decoration-style: dotted; padding: 4px 0;
+  }
+  .danger-link:hover { color: var(--tomato); }
+
+  /* ---------- Detail view ---------- */
+  .detail-section { margin-bottom: 22px; }
+  .detail-heading { font-family: 'Fraunces', serif; font-weight: 700; font-size: 14px; margin: 0 0 10px; color: var(--ink-soft); }
+  .detail-list { margin: 0; padding-left: 20px; font-size: 15px; line-height: 1.7; }
+  .detail-list.numbered { padding-left: 22px; }
+  .detail-list li.empty { color: #b9ac95; font-style: italic; list-style: none; margin-left: -20px; }
+  .detail-notes { font-size: 14px; line-height: 1.6; color: var(--ink-soft); margin: 0; white-space: pre-wrap; }
+
+  @media (prefers-reduced-motion: reduce) {
+    .card, .btn, .modal-card, .tag-chip { transition: none; animation: none; }
+  }
+
+  /* ---------- Mobile ---------- */
+  @media (max-width: 600px) {
+    .wrap { padding: 32px 16px 70px; }
+
+    .home-header { flex-direction: column; align-items: stretch; gap: 14px; }
+    .home-header .header-actions { display: grid; grid-template-columns: 1fr auto; gap: 10px; }
+    .home-header .btn-small { width: 100%; }
+
+    .catalog-search { padding: 12px 14px; }
+    .toolbar { flex-direction: column; align-items: stretch; }
+    .tag-filter-row { overflow-x: auto; flex-wrap: nowrap; padding-bottom: 4px; }
+
+    .grid { grid-template-columns: 1fr; gap: 18px; }
+    .card { padding: 20px 16px 16px 26px; transform: none !important; }
+    .card::before { left: 14px; }
+    .punch { left: 6px; }
+    .tab { left: 16px; }
+    .card-name { font-size: 17px; }
+
+    .modal-card { padding: 28px 20px 24px 34px; }
+    .modal-card::before { left: 26px; }
+    .modal-actions { flex-direction: column; }
+    .modal-actions .btn { width: 100%; min-height: 48px; }
+  }
+
+  @media (max-width: 360px) {
+    .title { font-size: 1.7rem; }
+  }
+</style>
+</head>
+<body>
+
+<div class="wrap">
+  <div class="home-header">
+    <div>
+      <p class="eyebrow">Deine Sammlung</p>
+      <h1 class="title">Der Rezeptkasten</h1>
+    </div>
+    <div class="header-actions">
+      <button id="open-add-btn" class="btn btn-small">+ Rezept hinzufügen</button>
+      <button id="open-settings-btn" class="icon-btn-outline" title="Einstellungen" aria-label="Einstellungen">⚙</button>
+    </div>
+  </div>
+
+  <div class="catalog-search">
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+    <input type="text" id="rezept-suche" placeholder="Karteikarten durchsuchen…">
+  </div>
+
+  <div class="toolbar">
+    <select id="sort-select" class="sort-select">
+      <option value="neu">Neueste zuerst</option>
+      <option value="alt">Älteste zuerst</option>
+      <option value="az">Name A–Z</option>
+    </select>
+    <div id="tag-filter-row" class="tag-filter-row"></div>
+  </div>
+
+  <div id="rezept-liste" class="grid"></div>
+</div>
+
+<!-- ============ Modal: Rezept hinzufügen / bearbeiten ============ -->
+<div id="modal-backdrop" class="modal-backdrop">
+  <div class="modal-card">
+    <span class="punch p1"></span><span class="punch p2"></span>
+    <button class="modal-close" aria-label="Schließen">✕</button>
+    <h2 id="modal-title" class="modal-title">Rezept hinzufügen</h2>
+
+    <div class="field">
+      <label class="field-label">Video-Link</label>
+      <input type="url" id="rezept-video" placeholder="Instagram-Reel, TikTok oder Link zu einem Rezept-Blog">
+    </div>
+    <div class="field">
+      <label class="field-label">Text der Bildunterschrift (optional)</label>
+      <textarea id="rezept-caption" placeholder="Text unter dem Reel/TikTok hier einfügen, falls vorhanden…"></textarea>
+    </div>
+    <p class="field-hint">Wird für die KI-Analyse genutzt. Leer lassen, dann versucht das Backend, die Bildunterschrift selbst zu lesen.</p>
+
+    <button id="analyze-btn" class="btn btn-ai">✨ Mit KI analysieren</button>
+    <p id="analyze-status" class="status-msg"></p>
+
+    <hr class="modal-divider">
+
+    <div class="field">
+      <label class="field-label">Rezept-Name</label>
+      <input type="text" id="rezept-name" placeholder="z. B. Knoblauch-Butter-Pasta">
+    </div>
+    <div class="field">
+      <label class="field-label">Zutaten (eine Zeile pro Zutat)</label>
+      <textarea id="rezept-zutaten" placeholder="200 g Spaghetti&#10;2 Knoblauchzehen&#10;50 g Butter"></textarea>
+    </div>
+    <div class="field">
+      <label class="field-label">Zubereitung (ein Schritt pro Zeile)</label>
+      <textarea id="rezept-zubereitung" placeholder="Nudeln kochen&#10;Knoblauch in Butter andünsten&#10;alles vermengen"></textarea>
+    </div>
+    <div class="field">
+      <label class="field-label">Tags (durch Komma getrennt)</label>
+      <input type="text" id="rezept-tags" placeholder="Pasta, Vegetarisch, Schnell">
+    </div>
+    <div class="field">
+      <label class="field-label">Notizen (optional)</label>
+      <textarea id="rezept-notizen" placeholder="eigene Anmerkungen, für wen es war…"></textarea>
+    </div>
+
+    <p id="rezept-status" class="status-msg"></p>
+
+    <div class="modal-actions">
+      <button id="modal-cancel-btn" class="btn btn-ghost">Abbrechen</button>
+      <button id="modal-save-btn" class="btn">Rezept speichern</button>
+    </div>
+  </div>
+</div>
+
+<!-- ============ Modal: Rezept ansehen ============ -->
+<div id="detail-backdrop" class="modal-backdrop">
+  <div class="modal-card">
+    <span class="punch p1"></span><span class="punch p2"></span>
+    <button class="modal-close" aria-label="Schließen">✕</button>
+    <span id="detail-platform" class="platform-label"></span>
+    <h2 id="detail-name" class="modal-title" style="margin-bottom:10px;"></h2>
+    <div id="detail-tags" class="tag-row"></div>
+
+    <div class="detail-section">
+      <h3 class="detail-heading">Zutaten</h3>
+      <ul id="detail-zutaten" class="detail-list"></ul>
+    </div>
+    <div class="detail-section">
+      <h3 class="detail-heading">Zubereitung</h3>
+      <ol id="detail-zubereitung" class="detail-list numbered"></ol>
+    </div>
+    <div id="detail-notizen-wrap" class="detail-section">
+      <h3 class="detail-heading">Notizen</h3>
+      <p id="detail-notizen" class="detail-notes"></p>
+    </div>
+
+    <div class="modal-actions">
+      <a id="detail-link" href="#" target="_blank" rel="noopener" class="btn btn-ghost">Video ansehen ↗</a>
+      <button id="detail-edit-btn" class="btn">Bearbeiten</button>
+    </div>
+  </div>
+</div>
+
+<!-- ============ Modal: Einstellungen ============ -->
+<div id="settings-backdrop" class="modal-backdrop">
+  <div class="modal-card">
+    <span class="punch p1"></span><span class="punch p2"></span>
+    <button class="modal-close" aria-label="Schließen">✕</button>
+    <h2 class="modal-title">Einstellungen</h2>
+
+    <div class="field">
+      <label class="field-label">Backend-URL</label>
+      <input type="url" id="settings-backend" placeholder="https://dein-backend.onrender.com">
+    </div>
+    <p class="settings-hint">Adresse deines eigenen KI-Backends (siehe Anleitung). Ohne diese URL kannst du Rezepte weiterhin von Hand anlegen — nur die KI-Analyse funktioniert dann nicht.</p>
+
+    <div class="modal-actions">
+      <button id="settings-cancel-btn" class="btn btn-ghost">Abbrechen</button>
+      <button id="settings-save-btn" class="btn">Speichern</button>
+    </div>
+    <button id="settings-reset-btn" class="danger-link">Alle Rezepte löschen</button>
+  </div>
+</div>
+
+<script>
+  const STORAGE_KEY = 'rezeptkasten_rezepte_v2';
+  const OLD_STORAGE_KEY = 'rezepte';
+  const BACKEND_KEY = 'rezeptkasten_backend_url';
+
+  let alleRezepte = [];
+  let bearbeitenId = null;
+  let aktiverTagFilter = null;
+
+  // ---- DOM refs ----
+  const modalBackdrop = document.getElementById('modal-backdrop');
+  const detailBackdrop = document.getElementById('detail-backdrop');
+  const settingsBackdrop = document.getElementById('settings-backdrop');
+
+  const modalTitle = document.getElementById('modal-title');
+  const videoInput = document.getElementById('rezept-video');
+  const captionInput = document.getElementById('rezept-caption');
+  const analyzeBtn = document.getElementById('analyze-btn');
+  const analyzeStatus = document.getElementById('analyze-status');
+  const nameInput = document.getElementById('rezept-name');
+  const zutatenInput = document.getElementById('rezept-zutaten');
+  const zubereitungInput = document.getElementById('rezept-zubereitung');
+  const tagsInput = document.getElementById('rezept-tags');
+  const notizenInput = document.getElementById('rezept-notizen');
+  const saveStatus = document.getElementById('rezept-status');
+  const saveBtn = document.getElementById('modal-save-btn');
+
+  const detailPlatform = document.getElementById('detail-platform');
+  const detailName = document.getElementById('detail-name');
+  const detailTags = document.getElementById('detail-tags');
+  const detailZutaten = document.getElementById('detail-zutaten');
+  const detailZubereitung = document.getElementById('detail-zubereitung');
+  const detailNotizenWrap = document.getElementById('detail-notizen-wrap');
+  const detailNotizen = document.getElementById('detail-notizen');
+  const detailLink = document.getElementById('detail-link');
+  const detailEditBtn = document.getElementById('detail-edit-btn');
+
+  const settingsBackendInput = document.getElementById('settings-backend');
+
+  // ---- Helpers ----
+  function escapeHtml(text) {
+    const div = document.createElement('div');
+    div.textContent = text || '';
+    return div.innerHTML;
+  }
+
+  function erkennePlattform(url) {
+    try {
+      const host = new URL(url).hostname.replace('www.', '');
+      if (host.includes('instagram.com')) return 'instagram';
+      if (host.includes('tiktok.com')) return 'tiktok';
+      if (host.includes('youtube.com') || host.includes('youtu.be')) return 'youtube';
+      return 'other';
+    } catch (e) { return 'other'; }
+  }
+
+  function plattformLabel(p) {
+    return { instagram: 'Reel', tiktok: 'TikTok', youtube: 'YouTube', other: 'Website' }[p] || 'Website';
+  }
+
+  function tabFarbe(p) {
+    return { instagram: 'var(--tomato)', tiktok: 'var(--ink)', youtube: 'var(--herb)', other: 'var(--butter)' }[p] || 'var(--butter)';
+  }
+
+  // ---- Storage ----
+  function migriereAlteDaten() {
+    let alt = [];
+    try { alt = JSON.parse(localStorage.getItem(OLD_STORAGE_KEY) || '[]'); } catch (e) { alt = []; }
+    if (!alt.length) return [];
+    return alt.map(r => ({
+      id: r.id || Date.now().toString() + Math.random().toString(36).slice(2),
+      name: r.name || '',
+      videoLink: r.videoLink || '',
+      platform: erkennePlattform(r.videoLink || ''),
+      zutaten: [],
+      zubereitung: [],
+      tags: [],
+      notizen: r.info || '',
+      erstellt: Number(r.id) || Date.now()
+    }));
+  }
+
+  function ladeRezepte() {
+    let gespeichert = null;
+    try { gespeichert = localStorage.getItem(STORAGE_KEY); } catch (e) { gespeichert = null; }
+    if (gespeichert) {
+      try { alleRezepte = JSON.parse(gespeichert); } catch (e) { alleRezepte = []; }
+    } else {
+      alleRezepte = migriereAlteDaten();
+      if (alleRezepte.length) speichereRezepte();
+    }
+    renderAlles();
+  }
+
+  function speichereRezepte() {
+    try { localStorage.setItem(STORAGE_KEY, JSON.stringify(alleRezepte)); }
+    catch (e) { console.error('Speichern fehlgeschlagen', e); }
+  }
+
+  // ---- Rendering ----
+  function gefilterteRezepte() {
+    const suchbegriff = document.getElementById('rezept-suche').value.toLowerCase();
+    let liste = alleRezepte.filter(r => {
+      const textTreffer = !suchbegriff ||
+        r.name.toLowerCase().includes(suchbegriff) ||
+        (r.zutaten || []).some(z => z.toLowerCase().includes(suchbegriff)) ||
+        (r.tags || []).some(t => t.toLowerCase().includes(suchbegriff));
+      const tagTreffer = !aktiverTagFilter || (r.tags || []).includes(aktiverTagFilter);
+      return textTreffer && tagTreffer;
+    });
+    const sortMode = document.getElementById('sort-select').value;
+    liste = liste.slice();
+    if (sortMode === 'neu') liste.sort((a, b) => b.erstellt - a.erstellt);
+    else if (sortMode === 'alt') liste.sort((a, b) => a.erstellt - b.erstellt);
+    else if (sortMode === 'az') liste.sort((a, b) => a.name.localeCompare(b.name, 'de'));
+    return liste;
+  }
+
+  function renderAlles() {
+    renderTagFilter();
+    renderKarten();
+  }
+
+  function renderTagFilter() {
+    const alleTags = [...new Set(alleRezepte.flatMap(r => r.tags || []))].sort((a, b) => a.localeCompare(b, 'de'));
+    const container = document.getElementById('tag-filter-row');
+    if (!alleTags.length) { container.innerHTML = ''; return; }
+    container.innerHTML = alleTags.map(t =>
+      `<button class="tag-chip${t === aktiverTagFilter ? ' active' : ''}" data-tag="${escapeHtml(t)}">${escapeHtml(t)}</button>`
+    ).join('');
+    container.querySelectorAll('.tag-chip').forEach(chip => {
+      chip.addEventListener('click', () => {
+        const tag = chip.getAttribute('data-tag');
+        aktiverTagFilter = (aktiverTagFilter === tag) ? null : tag;
+        renderAlles();
+      });
+    });
+  }
+
+  function renderKarten() {
+    const container = document.getElementById('rezept-liste');
+    if (!alleRezepte.length) {
+      container.innerHTML = '<div class="empty-box"><p>Deine Kiste ist noch leer — füge dein erstes Rezept hinzu.</p></div>';
+      return;
+    }
+    const liste = gefilterteRezepte();
+    if (!liste.length) {
+      container.innerHTML = '<div class="empty-box"><p>Keine Rezepte gefunden.</p></div>';
+      return;
+    }
+    container.innerHTML = liste.map(r => `
+      <div class="card">
+        <span class="tab" style="background:${tabFarbe(r.platform)}"></span>
+        <span class="punch"></span>
+        <span class="platform-label">${plattformLabel(r.platform)}</span>
+        <div class="card-name">${escapeHtml(r.name)}</div>
+        ${(r.tags && r.tags.length) ? `<div class="tag-row small">${r.tags.slice(0, 3).map(t => `<span class="tag-chip static">${escapeHtml(t)}</span>`).join('')}</div>` : ''}
+        <div class="card-info">${escapeHtml((r.zutaten || []).slice(0, 3).join(' · '))}</div>
+        <div class="card-footer">
+          <button class="card-link view-btn" data-id="${r.id}">Rezept ansehen ↗</button>
+          <div class="card-actions">
+            <button class="icon-btn edit" data-id="${r.id}" title="Bearbeiten">✎</button>
+            <button class="icon-btn delete" data-id="${r.id}" title="Löschen">✕</button>
+          </div>
+        </div>
+      </div>`).join('');
+
+    container.querySelectorAll('.view-btn').forEach(btn => btn.addEventListener('click', () => oeffneDetail(btn.dataset.id)));
+    container.querySelectorAll('.icon-btn.edit').forEach(btn => btn.addEventListener('click', () => {
+      const r = alleRezepte.find(x => x.id === btn.dataset.id);
+      if (r) oeffneModal(r);
+    }));
+    container.querySelectorAll('.icon-btn.delete').forEach(btn => btn.addEventListener('click', () => loescheRezept(btn.dataset.id)));
+  }
+
+  // ---- Add/edit modal ----
+  function oeffneModal(rezept) {
+    saveStatus.textContent = ''; saveStatus.className = 'status-msg';
+    analyzeStatus.textContent = ''; analyzeStatus.className = 'status-msg';
+    if (rezept) {
+      bearbeitenId = rezept.id;
+      modalTitle.textContent = 'Rezept bearbeiten';
+      saveBtn.textContent = 'Speichern';
+      videoInput.value = rezept.videoLink;
+      captionInput.value = '';
+      nameInput.value = rezept.name;
+      zutatenInput.value = (rezept.zutaten || []).join('\n');
+      zubereitungInput.value = (rezept.zubereitung || []).join('\n');
+      tagsInput.value = (rezept.tags || []).join(', ');
+      notizenInput.value = rezept.notizen || '';
+    } else {
+      bearbeitenId = null;
+      modalTitle.textContent = 'Rezept hinzufügen';
+      saveBtn.textContent = 'Rezept speichern';
+      [videoInput, captionInput, nameInput, zutatenInput, zubereitungInput, tagsInput, notizenInput].forEach(el => el.value = '');
+    }
+    modalBackdrop.classList.add('open');
+    videoInput.focus();
+  }
+
+  document.getElementById('open-add-btn').addEventListener('click', () => oeffneModal(null));
+  document.getElementById('modal-cancel-btn').addEventListener('click', () => modalBackdrop.classList.remove('open'));
+
+  async function mitKIAnalysieren() {
+    const link = videoInput.value.trim();
+    const caption = captionInput.value.trim();
+    let backendUrl = null;
+    try { backendUrl = localStorage.getItem(BACKEND_KEY); } catch (e) { backendUrl = null; }
+
+    analyzeStatus.className = 'status-msg';
+    if (!link) { analyzeStatus.textContent = 'Bitte zuerst den Video-Link einfügen.'; analyzeStatus.classList.add('err'); return; }
+    if (!backendUrl) { analyzeStatus.textContent = 'Kein Backend eingerichtet — trag die Backend-URL in den Einstellungen (⚙) ein.'; analyzeStatus.classList.add('err'); return; }
+
+    const urspruenglicherText = analyzeBtn.textContent;
+    analyzeBtn.disabled = true;
+    analyzeBtn.textContent = 'Analysiere …';
+
+    try {
+      const res = await fetch(backendUrl.replace(/\/+$/, '') + '/analyze', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ url: link, caption })
+      });
+      let data = null;
+      try { data = await res.json(); } catch (e) { data = null; }
+
+      if (!res.ok || !data || data.fehler) {
+        analyzeStatus.textContent = (data && data.fehler) ? data.fehler : ('Serverfehler (' + res.status + ')');
+        analyzeStatus.classList.add('err');
+        return;
+      }
+
+      nameInput.value = data.name || nameInput.value;
+      zutatenInput.value = (data.zutaten || []).join('\n');
+      zubereitungInput.value = (data.zubereitung || []).join('\n');
+      tagsInput.value = (data.tags || []).join(', ');
+      analyzeStatus.textContent = data.hinweis ? ('Hinweis: ' + data.hinweis) : 'Analyse abgeschlossen — bitte prüfen und bei Bedarf anpassen.';
+    } catch (err) {
+      analyzeStatus.textContent = 'Verbindung zum Backend fehlgeschlagen. Läuft es, und ist die URL korrekt?';
+      analyzeStatus.classList.add('err');
+    } finally {
+      analyzeBtn.disabled = false;
+      analyzeBtn.textContent = urspruenglicherText;
+    }
+  }
+  analyzeBtn.addEventListener('click', mitKIAnalysieren);
+
+  saveBtn.addEventListener('click', () => {
+    const name = nameInput.value.trim();
+    const videoLink = videoInput.value.trim();
+    saveStatus.className = 'status-msg';
+    if (!name || !videoLink) {
+      saveStatus.textContent = 'Bitte mindestens Name und Video-Link ausfüllen.';
+      saveStatus.classList.add('err');
+      return;
+    }
+    const zutaten = zutatenInput.value.split('\n').map(s => s.trim()).filter(Boolean);
+    const zubereitung = zubereitungInput.value.split('\n').map(s => s.trim()).filter(Boolean);
+    const tags = tagsInput.value.split(',').map(s => s.trim()).filter(Boolean);
+    const notizen = notizenInput.value.trim();
+    const platform = erkennePlattform(videoLink);
+
+    if (bearbeitenId) {
+      const r = alleRezepte.find(x => x.id === bearbeitenId);
+      if (r) Object.assign(r, { name, videoLink, platform, zutaten, zubereitung, tags, notizen });
+    } else {
+      alleRezepte.push({
+        id: Date.now().toString() + Math.random().toString(36).slice(2),
+        name, videoLink, platform, zutaten, zubereitung, tags, notizen,
+        erstellt: Date.now()
+      });
+    }
+    speichereRezepte();
+    modalBackdrop.classList.remove('open');
+    renderAlles();
+  });
+
+  function loescheRezept(id) {
+    alleRezepte = alleRezepte.filter(r => r.id !== id);
+    speichereRezepte();
+    renderAlles();
+  }
+
+  // ---- Detail modal ----
+  function oeffneDetail(id) {
+    const r = alleRezepte.find(x => x.id === id);
+    if (!r) return;
+    detailPlatform.textContent = plattformLabel(r.platform);
+    detailName.textContent = r.name;
+    detailTags.innerHTML = (r.tags || []).map(t => `<span class="tag-chip static">${escapeHtml(t)}</span>`).join('');
+    detailZutaten.innerHTML = (r.zutaten || []).map(z => `<li>${escapeHtml(z)}</li>`).join('') || '<li class="empty">Keine Zutaten hinterlegt</li>';
+    detailZubereitung.innerHTML = (r.zubereitung || []).map(s => `<li>${escapeHtml(s)}</li>`).join('') || '<li class="empty">Keine Zubereitungsschritte hinterlegt</li>';
+    if (r.notizen) { detailNotizenWrap.style.display = 'block'; detailNotizen.textContent = r.notizen; }
+    else { detailNotizenWrap.style.display = 'none'; }
+    detailLink.href = r.videoLink;
+    detailEditBtn.onclick = () => { detailBackdrop.classList.remove('open'); oeffneModal(r); };
+    detailBackdrop.classList.add('open');
+  }
+
+  // ---- Settings modal ----
+  document.getElementById('open-settings-btn').addEventListener('click', () => {
+    let current = '';
+    try { current = localStorage.getItem(BACKEND_KEY) || ''; } catch (e) { current = ''; }
+    settingsBackendInput.value = current;
+    settingsBackdrop.classList.add('open');
+  });
+  document.getElementById('settings-cancel-btn').addEventListener('click', () => settingsBackdrop.classList.remove('open'));
+  document.getElementById('settings-save-btn').addEventListener('click', () => {
+    const url = settingsBackendInput.value.trim();
+    try {
+      if (url) localStorage.setItem(BACKEND_KEY, url); else localStorage.removeItem(BACKEND_KEY);
+    } catch (e) { console.error('Speichern der Backend-URL fehlgeschlagen', e); }
+    settingsBackdrop.classList.remove('open');
+  });
+  document.getElementById('settings-reset-btn').addEventListener('click', () => {
+    if (confirm('Wirklich alle gespeicherten Rezepte löschen? Das kann nicht rückgängig gemacht werden.')) {
+      alleRezepte = [];
+      speichereRezepte();
+      renderAlles();
+      settingsBackdrop.classList.remove('open');
+    }
+  });
+
+  // ---- Generic modal close (X, backdrop click, Escape) ----
+  document.querySelectorAll('.modal-close').forEach(btn => {
+    btn.addEventListener('click', () => btn.closest('.modal-backdrop').classList.remove('open'));
+  });
+  document.querySelectorAll('.modal-backdrop').forEach(bd => {
+    bd.addEventListener('click', e => { if (e.target === bd) bd.classList.remove('open'); });
+  });
+  document.addEventListener('keydown', e => {
+    if (e.key === 'Escape') document.querySelectorAll('.modal-backdrop.open').forEach(bd => bd.classList.remove('open'));
+  });
+
+  // ---- Search & sort ----
+  document.getElementById('rezept-suche').addEventListener('input', renderKarten);
+  document.getElementById('sort-select').addEventListener('change', renderKarten);
+
+  // ---- Geteilter Link (z. B. aus einem iOS-Kurzbefehl im Teilen-Menü) ----
+  // Erwartet ?teilen=<url-codierter-link> in der Adresse, z. B. von "URLs öffnen" in Kurzbefehle.
+  function verarbeiteGeteiltenLink() {
+    const params = new URLSearchParams(window.location.search);
+    const geteilterLink = params.get('teilen');
+    if (!geteilterLink) return;
+
+    // Adresse bereinigen, damit ein Neuladen der Seite nicht erneut auslöst
+    window.history.replaceState({}, '', window.location.pathname);
+
+    oeffneModal(null);
+    videoInput.value = geteilterLink;
+
+    let backendUrl = null;
+    try { backendUrl = localStorage.getItem(BACKEND_KEY); } catch (e) { backendUrl = null; }
+    if (backendUrl) mitKIAnalysieren();
+  }
+
+  ladeRezepte();
+  verarbeiteGeteiltenLink();
+</script>
+</body>
+</html>
